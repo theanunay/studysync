@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-saffron: #FF9933;
+  --color-marigold: #FFBF00;
+  --color-sandstone: #F9E4B7;
+  --color-temple-white: #FFFBF0;
+  --color-vermillion: #E31E24;
+  --color-gold: #D4AF37;
+  --color-deep-saffron: #CC7A29;
+  
+  --font-sans: "Inter", "Noto Sans Devanagari", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-temple-white text-slate-900 transition-colors duration-500;
+  }
+  
+  .dark body {
+    @apply bg-slate-950 text-slate-100;
+  }
+}
+
+@layer utilities {
+  .bg-ayodhya-gradient {
+    background: linear-gradient(135deg, #FF9933 0%, #FFBF00 100%);
+  }
+
+  .bg-divine-dark {
+    background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+  }
+  
+  .text-shadow-saffron {
+    text-shadow: 0 0 10px rgba(255, 153, 51, 0.4);
+  }
+  
+  .border-temple {
+    border-style: solid;
+    border-image: linear-gradient(to right, #D4AF37, #FF9933, #D4AF37) 1;
+  }
+
+  .temple-pattern {
+    background-image: radial-gradient(#FF9933 1px, transparent 1px);
+    background-size: 20px 20px;
+    opacity: 0.08;
+  }
+
+  .dark .temple-pattern {
+    background-image: radial-gradient(#FF9933 0.5px, transparent 0.5px);
+    opacity: 0.03;
+  }
+
+  /* Divine glow effects */
+  .divine-glow {
+    box-shadow: 0 0 30px rgba(255, 183, 0, 0.2);
+  }
+
+  .dark .divine-glow {
+    box-shadow: 0 0 40px rgba(255, 153, 51, 0.1);
+  }
+
+  .arch-top {
+    border-top-left-radius: 50% 20%;
+    border-top-right-radius: 50% 20%;
+  }
+
+  /* Traditional Diwali-like flickering light effect */
+  @keyframes diya-flicker {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+
+  .diya-light {
+    animation: diya-flicker 3s infinite ease-in-out;
+  }
+
+  @keyframes majestic-shadow {
+    0% { box-shadow: 0 0 20px 2px rgba(255, 153, 51, 0.4), 0 0 40px 5px rgba(236, 72, 153, 0.2); }
+    33% { box-shadow: 0 0 30px 4px rgba(56, 189, 248, 0.5), 0 0 60px 8px rgba(168, 85, 247, 0.3); }
+    66% { box-shadow: 0 0 25px 3px rgba(34, 197, 94, 0.4), 0 0 50px 6px rgba(234, 179, 8, 0.2); }
+    100% { box-shadow: 0 0 20px 2px rgba(255, 153, 51, 0.4), 0 0 40px 5px rgba(236, 72, 153, 0.2); }
+  }
+  
+  .dark .majestic-shadow {
+    animation: majestic-shadow-dark 4s infinite linear;
+  }
+
+  @keyframes majestic-shadow-dark {
+    0% { box-shadow: 0 0 20px 2px rgba(255, 153, 51, 0.2), 0 0 40px 5px rgba(236, 72, 153, 0.1); }
+    33% { box-shadow: 0 0 30px 4px rgba(56, 189, 248, 0.25), 0 0 60px 8px rgba(168, 85, 247, 0.15); }
+    66% { box-shadow: 0 0 25px 3px rgba(34, 197, 94, 0.2), 0 0 50px 6px rgba(234, 179, 8, 0.1); }
+    100% { box-shadow: 0 0 20px 2px rgba(255, 153, 51, 0.2), 0 0 40px 5px rgba(236, 72, 153, 0.1); }
+  }
+
+  .majestic-shadow {
+    animation: majestic-shadow 4s infinite linear;
+  }
+}

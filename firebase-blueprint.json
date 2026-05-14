@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Public user profile and encryption keys",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "status": { "type": "string" },
+        "publicKey": { "type": "string", "description": "Base64 encoded public key for E2EE" },
+        "lastSeen": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "publicKey"]
+    },
+    "Chat": {
+      "title": "Chat Session",
+      "description": "A conversation between two or more users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["private", "group"] },
+        "name": { "type": "string" },
+        "members": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "typing": { "type": "object", "description": "Map of userId to boolean" }
+      },
+      "required": ["type", "members"]
+    },
+    "Contact": {
+      "title": "Contact",
+      "description": "A relationship between two users",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "addedAt"]
+    },
+    "Call": {
+      "title": "Call Signal",
+      "description": "WebRTC signaling data",
+      "type": "object",
+      "properties": {
+        "callerId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "type": { "type": "string", "enum": ["offer", "answer", "candidate"] },
+        "signal": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Message": {
+      "title": "Message",
+      "description": "An encrypted message within a chat",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "content": { "type": "string", "description": "Encrypted message content" },
+        "type": { "type": "string", "enum": ["text", "image", "video", "file"] },
+        "fileName": { "type": "string" },
+        "fileSize": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "reactions": { "type": "object" },
+        "status": { "type": "string", "enum": ["sent", "delivered", "read"] }
+      },
+      "required": ["senderId", "content", "type", "timestamp"]
+    },
+    "StatusUpdate": {
+      "title": "Status Update",
+      "description": "Ephemeral status update (stories)",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "image"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "content", "type", "timestamp", "expiresAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Chat metadata"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages for a specific chat"
+    },
+    "/users/{userId}/contacts/{contactId}": {
+      "schema": "Contact",
+      "description": "User's contact list"
+    },
+    "/chats/{chatId}/calls/{callId}": {
+      "schema": "Call",
+      "description": "Call signaling data"
+    },
+    "/statusUpdates/{statusId}": {
+      "schema": "StatusUpdate",
+      "description": "User status updates"
+    }
+  }
+}

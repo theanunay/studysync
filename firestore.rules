@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Users ---
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.uid == request.auth.uid 
+          && data.publicKey is string 
+          && data.publicKey.size() <= 1000
+          && (data.displayName == null || (data.displayName is string && data.displayName.size() <= 100))
+          && (data.status == null || (data.status is string && data.status.size() <= 200));
+      }
+
+      allow get: if isSignedIn();
+      allow list: if isSignedIn(); // Allow searching users
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'status', 'publicKey', 'lastSeen']);
+
+      // --- Contacts ---
+      match /contacts/{contactId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(request.resource.data.uid);
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // --- Chats ---
+    match /chats/{chatId} {
+      function isMember(chat) {
+        return isSignedIn() && request.auth.uid in chat.members;
+      }
+
+      function isValidChat(data) {
+        return data.type in ['private', 'group']
+          && data.members is list
+          && data.members.size() >= 1
+          && data.members.size() <= 100
+          && (data.type == 'group' ? (data.name is string && data.name.size() <= 100) : true);
+      }
+
+      allow get: if isMember(resource.data);
+      allow list: if isSignedIn() && request.auth.uid in resource.data.members;
+      allow create: if isSignedIn() && isValidChat(request.resource.data) && request.auth.uid in request.resource.data.members;
+      allow update: if isMember(resource.data) && isValidChat(request.resource.data)
+        && (
+          // Action: Update metadata
+          request.resource.data.members.hasAll(resource.data.members) ||
+          // Action: Typing indicator update
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['typing']) ||
+          // Action: Last message update
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage'])
+        );
+
+      // --- Messages ---
+      match /messages/{messageId} {
+        function isValidMessage(data) {
+          return data.senderId == request.auth.uid
+            && data.content is string
+            && data.content.size() <= 10000
+            && data.type in ['text', 'image', 'video', 'file']
+            && data.timestamp == request.time;
+        }
+
+        allow get: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data);
+        allow list: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data);
+        allow create: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data) && isValidMessage(request.resource.data);
+        allow update: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data)
+          && (
+            // Anyone in chat can update reactions or status
+            request.resource.data.diff(resource.data).affectedKeys().hasAny(['reactions', 'status'])
+          );
+        allow delete: if false;
+      }
+
+      // --- Calls ---
+      match /calls/{callId} {
+        allow read: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data);
+        allow create: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data) 
+          && request.resource.data.callerId == request.auth.uid;
+        allow delete: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data);
+      }
+    }
+
+    // --- Status Updates ---
+    match /statusUpdates/{statusId} {
+      function isValidStatus(data) {
+        return isOwner(data.userId)
+          && (data.content == null || (data.content is string && data.content.size() <= 1000))
+          && (data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 2000))
+          && data.timestamp == request.time;
+      }
+
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isValidStatus(request.resource.data);
+      allow update: if isOwner(resource.data.userId) && isValidStatus(request.resource.data);
+      allow delete: if isOwner(resource.data.userId);
+
+      match /views/{viewerId} {
+        allow read: if isSignedIn() && (
+          viewerId == request.auth.uid || 
+          (exists(/databases/$(database)/documents/statusUpdates/$(statusId)) && 
+           isOwner(get(/databases/$(database)/documents/statusUpdates/$(statusId)).data.userId))
+        );
+        allow create: if isSignedIn() && viewerId == request.auth.uid && request.resource.data.timestamp == request.time;
+      }
+    }
+  }
+}

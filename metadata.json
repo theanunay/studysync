@@ -1,0 +1,6 @@
+{
+  "name": "StudySync Daily",
+  "description": "Daily educational trends and AI news",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": []
+}
